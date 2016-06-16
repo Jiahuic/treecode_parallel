@@ -33,8 +33,7 @@ double maxval(double* x, int numpars){
   return MaxVal;
 }
 
-int setup(double* x,double* y,double* z,double* q,int numpars,\
-           int order, double xyzminmax[6]){
+int setup(double xyzminmax[6]){
 //
 // SETUP allocates and initializes arrays needed for the Taylor expansion.
 // Also, global variables are set and the Cartesian coordinates of
@@ -74,9 +73,9 @@ int setup(double* x,double* y,double* z,double* q,int numpars,\
 
   a = (double***)calloc(torderlim+3, sizeof(double**));
   b = (double***)calloc(torderlim+3, sizeof(double**));
-  for (i=0;i<torderlim+3;i++) 
+  for (i=0;i<torderlim+3;i++)
     a[i] = (double**)calloc(torderlim+3, sizeof(double*));
-  for (i=0;i<torderlim+3;i++) 
+  for (i=0;i<torderlim+3;i++)
     b[i] = (double**)calloc(torderlim+3, sizeof(double*));
   for (i=0;i<torderlim+3;i++){
     for (j=0;j<torderlim+3;j++)
@@ -94,7 +93,7 @@ int setup(double* x,double* y,double* z,double* q,int numpars,\
     fprintf(stderr, "setup error: b empty data array\n");
     return 1;
   }
-  
+
   for (i=0;i<torderlim+3;i++){
     for (j=0;j<torderlim+3;j++){
       for (k=0;k<torderlim+3;k++){
@@ -126,8 +125,7 @@ int setup(double* x,double* y,double* z,double* q,int numpars,\
   printf("%f,%f,%f,%f,%f,%f\n",xyzminmax[0],xyzminmax[1],xyzminmax[2],
          xyzminmax[3],xyzminmax[4],xyzminmax[5]);
 
-
-
+  orderarr = (int*)calloc(numpars,sizeof(int));
 
   for (i=0;i<numpars;i++)
     orderarr[i]=i+1;
@@ -141,7 +139,7 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
 
   /* local variables */
   double x_mid,y_mid,z_mid,xl,yl,zl,lmax,t1,t2,t3;
-  int **ind;
+  int ind[8][2];
   double xyzmms[6][8];
   int i,j,limin,limax,err,loclev,numposchild;
   double lxyzmm[6];
@@ -151,13 +149,12 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
                    double xyzmms[6][8],
                    double xl,double yl,double zl,double lmax,
                    int numposchild, double x_mid,double y_mid,
-                   double z_mid,int **ind,int numpars);
+                   double z_mid,int ind[8][2],int numpars);
 
-  ind = (int**)calloc(8,sizeof(int*));
   for (i=0;i<8;i++){
-    ind[i]=(int*)calloc(2,sizeof(int));
+    ind[i][0]=0; ind[i][1]=0;
   }
-  
+
 /* set node fields: number of particles, exist_ms and xyz bounds */
 
   p->numpar=iend-ibeg+1;
@@ -203,7 +200,7 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
 //  if (level==2)
 //  if (ibeg>=13322 && iend <=15055)
 //    printf("Tree is %d and %d, of level %d\n",ibeg,iend,level);
- 
+
   if (maxlevel < level) maxlevel=level;
   p->num_children = 0;
   p->child=(tnode**)malloc(8*sizeof(tnode*));
@@ -221,7 +218,7 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
     for (i=0;i<8;i++){
       ind[i][0]=0;
       ind[i][1]=0;
-    }    
+    }
     ind[0][0]=ibeg;
     ind[0][1]=iend;
     x_mid=p->x_mid;
@@ -233,11 +230,11 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
 
 //printf("ind %d,%d\n",ind[1][0],ind[1][1]);
 //    if (ibeg>=13322 && iend <=15055)
-//    
+//
 //      printf("from %d to %d, the number of children is %d\n",ibeg,iend, numposchild);
 
     loclev = level+1;
- 
+
     for (i=0;i<numposchild;i++){
 //    if (ind[i][0]>=2088 & ind[i][1]<=2100)
 //      printf("%d %d, %d\n",i,ind[i][0],ind[i][1]);
@@ -247,7 +244,7 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
         p->num_children = p->num_children+1;
         for (j=0;j<6;j++) {
           lxyzmm[j]=xyzmms[j][i];
-        }        
+        }
         create_tree(p->child[p->num_children-1],
                     ind[i][0],ind[i][1],x,y,z,q,maxparnode,
                     lxyzmm,loclev,numpars);
@@ -263,7 +260,7 @@ int partition_8(double *x,double *y,double *z,double *q,
                  double xyzmms[6][8],
                  double xl,double yl,double zl,double lmax,
                  int numposchild, double x_mid,double y_mid,
-                 double z_mid,int **ind,int numpars){
+                 double z_mid,int ind[8][2],int numpars){
 /* PARTITION_8 determines the particle indices of the eight sub boxes
  * containing the particles after the box defined by particles I_BEG
  * to I_END is divided by its midpoints in each coordinate direction.
@@ -272,7 +269,7 @@ int partition_8(double *x,double *y,double *z,double *q,
  * resulting aspect ratio is not too large. This avoids the creation of
  * "narrow" boxes in which Talyor expansions may become inefficient.
  * On exit the INTEGER array IND (dimension 8 x 2) contains
- * the indice limits of each new box (node) and NUMPOSCHILD the number 
+ * the indice limits of each new box (node) and NUMPOSCHILD the number
  * of possible children.  If IND(J,1) > IND(J,2) for a given J this indicates
  * that box J is empty.*/
 
@@ -284,7 +281,7 @@ int partition_8(double *x,double *y,double *z,double *q,
   numposchild = 1;
   critlen = lmax/sqrt(2.0);
 //if(ind[0][0]==0) printf("x[0]=%f\n",x[0]);
-  if (xl >= critlen) {    
+  if (xl >= critlen) {
     temp_ind = partition(x,y,z,q,orderarr,ind[0][0],ind[0][1],x_mid,
                          temp_ind,numpars);
 
@@ -325,7 +322,7 @@ int partition_8(double *x,double *y,double *z,double *q,
       ind[i][1]=temp_ind;
 //printf("temp=%d %d    %d    %d    %d\n",temp_ind,ind[i][0],ind[i][1],
 //        ind[numposchild+i][0],ind[numposchild+i][1]);
- 
+
       for (j=0;j<6;j++) xyzmms[j][numposchild+i]=xyzmms[j][i];
       xyzmms[5][i]=z_mid;
       xyzmms[4][numposchild+i]=z_mid;
@@ -382,7 +379,7 @@ int partition(double *a,double *b,double *c,double *q,int *indarr,int ibeg,
     b[upper]=tb;
     c[upper]=tc;
     q[upper]=tq;
-    indarr[upper]=tind;    
+    indarr[upper]=tind;
   }
   else if (ibeg == iend){
 //    printf("ibeg=iend\n");
@@ -393,7 +390,7 @@ int partition(double *a,double *b,double *c,double *q,int *indarr,int ibeg,
       midind = ibeg - 1;
     }
   }
-  else if (ibeg > iend){ 
+  else if (ibeg > iend){
 //    printf("it is %d\n",ibeg);
     midind = ibeg - 1;
   }
@@ -404,10 +401,10 @@ void tree_compp(tnode *p,double *x,double *y,double *z,double *q,
                 double kappa,double theta,double *tpoten,int numpars){
 
 /* TREE_COMPF is the driver routine which calls COMPF_TREE for each
-   particle, setting the global variable TARPOS before the call. 
+   particle, setting the global variable TARPOS before the call.
    The current target particle's x coordinate and charge are changed
    so that it does not interact with itself. P is the root node of the tree.*/
- 
+
   int i,j;
   double peng,tempx,tempq,pi4;
 
@@ -425,14 +422,14 @@ void tree_compp(tnode *p,double *x,double *y,double *z,double *q,
     tarpos[0]=x[i];
     tarpos[1]=y[i];
     tarpos[2]=z[i];
-   
+
     tempx=x[i];
     tempq=q[i];
     x[i]=x[i]+100.123456789;
     q[i]=0.0;
 
     peng = compp_tree(p,peng,x,y,z,q,kappa,theta,numpars);
-  
+
 
     x[i]=tempx;
     q[i]=tempq;
@@ -455,7 +452,7 @@ void comp_ms_all(tnode *p,int ifirst){
 
   if (p->exist_ms == 0 && ifirst == 0){
     p->ms = (double***)calloc(torder+1, sizeof(double**));
-    for (i=0;i<torder+1;i++) 
+    for (i=0;i<torder+1;i++)
       p->ms[i] = (double**)calloc(torder+1, sizeof(double*));
     for (i=0;i<torder+1;i++){
       for (j=0;j<torder+1;j++)
@@ -475,12 +472,12 @@ void comp_ms_all(tnode *p,int ifirst){
 }
 
 void comp_ms(tnode *p,double *x,double *y,double *z,double* q,int numpars){
-/* COMP_MS computes the moments for node P needed in the Taylor 
+/* COMP_MS computes the moments for node P needed in the Taylor
  *  * approximation */
 
   int i,k1,k2,k3,n,m,k;
   double dx,dy,dz,tx,ty,tz;
-   
+
   for (i=p->ibeg;i<p->iend+1;i++){
     dx=x[i]-p->x_mid;
     dy=y[i]-p->y_mid;
@@ -554,7 +551,7 @@ void comp_tcoeff(tnode *p, double kappa){
 // COMP_TCOEFF computes the Taylor coefficients of the potential
 // using a recurrence formula.  The center of the expansion is the
 // midpoint of the node P.  TARPOS and TORDERLIM are globally defined.
-  
+
   double dx,dy,dz,ddx,ddy,ddz,dist,fac;
   double kappax,kappay,kappaz;
   int i,j,k;
@@ -618,8 +615,8 @@ void comp_tcoeff(tnode *p, double kappa){
     b[2][i+2][3]=kappaz*a[2][i+2][2];
     b[3][i+2][2]=kappax*a[2][i+2][2];
     b[i+2][3][2]=kappay*a[i+2][2][2];
-    b[i+2][2][3]=kappaz*a[i+2][2][2]; 
-    
+    b[i+2][2][3]=kappaz*a[i+2][2][2];
+
     a[3][2][i+2]=fac*(dx*a[2][2][i+2]+ddz*a[3][2][i+1]-a[3][2][i]+
                  kappax*b[2][2][i+2]);
     a[2][3][i+2]=fac*(dy*a[2][2][i+2]+ddz*a[2][3][i+1]-a[2][3][i]+
@@ -649,7 +646,7 @@ void comp_tcoeff(tnode *p, double kappa){
                      cf1[i-1]*kappa*(dx*b[i+1][2][j+2]-b[i][2][j+2]));
       a[2][i+2][j+2]=fac*(ddy*cf2[i-1]*a[2][i+1][j+2]+ddz*a[2][i+2][j+1]
                      -cf3[i-1]*a[2][i][j+2]-a[2][i+2][j]+
-                     cf1[i-1]*kappa*(dy*b[2][i+1][j+2]-b[2][i][j+2]));      
+                     cf1[i-1]*kappa*(dy*b[2][i+1][j+2]-b[2][i][j+2]));
     }
   }
 
@@ -726,8 +723,11 @@ double compp_direct(double peng,int ibeg,int iend,double *x,double *y,
   return peng;
 }
 
-void cleanup(p){
+void cleanup(tnode* p){
   int i,j,err;
+
+  extern int remove_node();
+  extern int remove_mmt();
 
   /* delete 1D array */
   free(cf);
@@ -748,30 +748,43 @@ void cleanup(p){
   free(b);
 
   /* delete 1D array */
-//  free(xcopy);
-//  free(ycopy);
-//  free(zcopy);
-//  free(qcopy);
   free(orderarr);
 
+  remove_mmt(p);
   remove_node(p);
+  free(p);
 }
 
-void remove_node(p){
+int remove_mmt(tnode *p){
   int i,j;
 
-//  if (p->exist_ms == 1){
-//    for (i=0;i<torder+1;i++){    
-//      for (j=0;j<torder+1;j++){
-//        free(p->ms[i][j]);
-//      }
-//      free(p->ms[i]);
-//    }
-//    free(p->node_idx);
-//    free(numpar);
-//  }
+  if (p->exist_ms == 1){
+    for (i=0;i<torder+1;i++){
+      for (j=0;j<torder+1;j++){
+        free(p->ms[i][j]);
+      }
+      free(p->ms[i]);
+    }
+    free(p->ms);
+    p->exist_ms=0;
+  }
+
+  return 0;
 }
 
+int remove_node(tnode *p){
+  int i;
+
+  if (p->num_children > 0){
+    for (i=0;i<8;i++){
+      remove_node(p->child[i]);
+      free(p->child[i]);
+    }
+    free(p->child);
+  }
+
+  return 0;
+}
 
 int treecode3d_yukawa(double *x,double *y,double *z,double *q,double kappa,
                        int order,double theta,int maxparnode,int numpars,
@@ -782,7 +795,7 @@ int treecode3d_yukawa(double *x,double *y,double *z,double *q,double kappa,
   time_t create_stime,create_etime,tree_stime,tree_etime;
   double create_ttime,tree_ttime;
 //printf("numpar is %d\n",numpars);
-  err=setup(x,y,z,q,numpars,order,xyzminmax);
+  setup(xyzminmax);
 
   level = 0;
   minlevel = 50000;
@@ -811,10 +824,7 @@ int treecode3d_yukawa(double *x,double *y,double *z,double *q,double kappa,
 
   for (i=0;i<numpars;i++) orderind[orderarr[i]]=i;
 
-//  cleanup(troot);
+  cleanup(troot);
 
   return 0;
 }
-
-
-

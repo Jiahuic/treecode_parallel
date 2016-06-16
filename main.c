@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
                      double kappa,int numpars,double* dpoten);
   int compute_direct2(double* x,double* y,double* z,double* q,
                       double kappa,int numpars,double* dpoten);
-  int compute_direct3(double* x,double* y,double* z,double* q, 
+  int compute_direct3(double* x,double* y,double* z,double* q,
                       double kappa,int numpars,double* dpoten);
   int treecode3d_yukawa(double* x,double* y,double* z,double* q,
                         double kappa,int order,double theta,
@@ -44,11 +44,9 @@ int main(int argc, char *argv[]) {
   kappa=0.0;             // screening coefficient
   maxparnode=500;
 
-  /* by readin to get the surface of molecule */ 
-  sprintf(fname,"1a63");
-//  sprintf(fname,"1ajj");
-//  sprintf(fname,"1ajj");
-  sprintf(density,"2");
+  /* by readin to get the surface of molecule */
+  sprintf(fname,"1ajj");
+  sprintf(density,"3");
   readin(fname,density);
   numpars=nface;         // number of partucakes = number of faces
 
@@ -135,14 +133,14 @@ int main(int argc, char *argv[]) {
   /* compute potential by treecode */
   for (i=0;i<numpars;i++) tpoten[i]=0.0;
 
-  sttime = time(NULL); 
-  treecode3d_yukawa(x,y,z,q,kappa,order,theta,maxparnode,numpars,\
+  sttime = time(NULL);
+  treecode3d_yukawa(x,y,z,q,kappa,order,theta,maxparnode,numpars,
                     orderind,tpoten);
   ettime = time(NULL);
   tttime = ((double)ettime-sttime);
   printf("  \n");
   printf("Runtime for treecode is %f\n",tttime);
- 
+
   /* compute potential directly */
   printf("  \n");
   printf("Computing potential - directly\n");
@@ -175,20 +173,42 @@ int main(int argc, char *argv[]) {
       maxint = i;
     }
   }
-  
+
   relerr = sqrt(relerr/abserr);
   relinf_err = relinf_err/absinf_err;
   printf("get max %f @ %d\n",absinf_err,maxint);
   printf("Relative L2 and Inf error: %e,%e\n",relerr,relinf_err);
   printf("  \n");
 
+  for (i=0;i<3;i++){
+    free(extr_v[i]);
+    free(sptpos[i]);
+    free(sptnrm[i]);
+    free(atmpos[i]);
+  }
+  for (i=0;i<2;i++){
+    free(extr_f[i]);
+  }
+  free(extr_v);
+  free(sptpos);
+  free(sptnrm);
+  free(extr_f);
+  free(atmpos);
+  free(atmrad);
+
   free(x);
+
   free(y);
+
   free(z);
+
   free(q);
-  free(orderind);
-  free(tpoten);
-  free(dpoten);
+
+//  free(orderind);
+
+//  free(tpoten);
+
+//  free(dpoten);
 
   return 0;
 } // end main
@@ -215,7 +235,7 @@ int compute_direct(double* x,double* y,double* z,double* q, \
       dist = sqrt(tx*tx+ty*ty+tz*tz);
       temp = exp(-kappa*dist)/dist/4/pi;
       peng += q[j]*temp;
-      dpoten[j] += q[i]*temp;    
+      dpoten[j] += q[i]*temp;
     }
     dpoten[i] = q[i]*(dpoten[i]+peng);
 
@@ -248,7 +268,7 @@ int compute_direct2(double* x,double* y,double* z,double* q,
         peng = peng;
       }
     }
-    dpoten[i]=q[i]*peng; 
+    dpoten[i]=q[i]*peng;
   }
 }
 
@@ -270,7 +290,7 @@ int compute_direct3(double* x,double* y,double* z,double* q,
     x[i]=100.0;
 
     for (j=0;j<numpars;j++){
- 
+
 
       tx = x[j]-tempx;
       ty = y[j]-y[i];
@@ -280,7 +300,7 @@ int compute_direct3(double* x,double* y,double* z,double* q,
       peng += q[j]*temp;
 
     }
-    dpoten[i]=tempq*peng; 
+    dpoten[i]=tempq*peng;
     q[i]=tempq;
     x[i]=tempx;
   }

@@ -11,18 +11,15 @@
 /* Writen Inclusions */
 #include "treecode.h" /* writen in molecule */
 
-/* the part different from readin.f90 same like readin.c  */
-
-
 /* function read in molecule */
 int readin(char fname[16],char density[16]){
-  FILE *fp;
-  char c;
+  FILE *fp,*wfp;
+  char c,c1[10],c2[10],c3[10],c4[10],c5[10];
   char fpath[256],fname_tp[256]; //fname,density
   /* fpath=pathname,fname_tp,fname,density*/
 
   /* variables in c */
-  int i,j,k,i1,i2,i3,j1,j2,j3,ii,jj,kk; //nfacenew,ichanged;
+  int i,j,k,i1,i2,i3,j1,j2,j3,ii,jj,kk,ierr; //nfacenew,ichanged;
   double a1,a2,a3,b1,b2,b3;//a_norm,r0_norm,v0_norm;
 
   /* in fortran with double presision */
@@ -37,10 +34,24 @@ int readin(char fname[16],char density[16]){
   double triangle_area(double v[3][3]);
 
   /* read in vertices */
-  sprintf(fpath,"");
-  sprintf(fname_tp,"msms -if %s.xyzr -prob 1.4 -de %s -of %s ", fname, density, fname);
+  sprintf(fpath,"test_proteins/");
+
+  sprintf(fname_tp,"%s%s.pqr",fpath,fname);
+  fp=fopen(fname_tp,"r");
+  sprintf(fname_tp,"%s%s.xyzr",fpath,fname);
+  wfp=fopen(fname_tp,"w");
+
+  while(fscanf(fp,"%s %s %s %s %s %lf %lf %lf %lf %lf",c1,c2,c3,
+               c4,c5,&a1,&a2,&a3,&b1,&b2) != EOF){
+    fprintf(wfp,"%f %f %f %f\n",a1,a2,a3,b2);
+  }
+  fclose(fp);
+  fclose(wfp);
+
+  /* run msms */
+  sprintf(fname_tp,"msms -if %s%s.xyzr -prob 1.4 -de %s -of %s%s ", fpath, fname, density, fpath, fname);
   printf("%s\n",fname_tp);
-  system(fname_tp);
+  ierr=system(fname_tp);
 
   /*======================================================================*/
 
@@ -55,7 +66,7 @@ int readin(char fname[16],char density[16]){
    }
   }
 
-  fscanf(fp,"%d %d %lf %lf ",&nspt,&natm,&den,&prob_rds);
+  ierr=fscanf(fp,"%d %d %lf %lf ",&nspt,&natm,&den,&prob_rds);
   printf("nspt=%d, natm=%d, den=%lf, prob=%lf\n", nspt,natm,den,prob_rds);
 
   /*allocate variables for vertices file*/
@@ -70,11 +81,11 @@ int readin(char fname[16],char density[16]){
   sptnrm=(double**)calloc(3,sizeof(double*));
   for (i=0;i<3;i++){
     sptnrm[i]=(double*)calloc(nspt,sizeof(double));
-  } 
+  }
 
 
   for (i=0;i<=nspt-1;i++){
-    fscanf(fp,"%lf %lf %lf %lf %lf %lf %d %d %d",&a1,&a2,&a3,&b1,&b2,&b3,&i1,&i2,&i3);
+    ierr=fscanf(fp,"%lf %lf %lf %lf %lf %lf %d %d %d",&a1,&a2,&a3,&b1,&b2,&b3,&i1,&i2,&i3);
 
     sptpos[0][i]=a1;
     sptpos[1][i]=a2;
@@ -90,14 +101,14 @@ int readin(char fname[16],char density[16]){
   printf("finish reading vertices file\n");
 
   /* read in faces */
-  sprintf(fname_tp, "%s%s.face",fpath,fname);
+  ierr=sprintf(fname_tp, "%s%s.face",fpath,fname);
   fp=fopen(fname_tp,"r");
   for (i=1;i<=2;i++){
     while (c=getc(fp)!='\n'){
    }
   }
 
-  fscanf(fp,"%d %d %lf %lf ",&nface,&natm,&den,&prob_rds);
+  ierr=fscanf(fp,"%d %d %lf %lf ",&nface,&natm,&den,&prob_rds);
   printf("nface=%d, natm=%d, den=%lf, prob=%lf\n", nface,natm,den,prob_rds);
 
   /* allocate variables for vertices file */
@@ -109,9 +120,9 @@ int readin(char fname[16],char density[16]){
   for (i=0;i<3;i++){
     nvert[i]=(int*)calloc(nface,sizeof(int));
   }
-  
+
   for (i=0;i<=nface-1;i++){
-    fscanf(fp,"%d %d %d %d %d",&j1,&j2,&j3,&i1,&i2);
+    ierr=fscanf(fp,"%d %d %d %d %d",&j1,&j2,&j3,&i1,&i2);
     nvert[0][i]=j1;
     nvert[1][i]=j2;
     nvert[2][i]=j3;
@@ -134,12 +145,12 @@ int readin(char fname[16],char density[16]){
     atmpos[i]=(double*)calloc(natm,sizeof(double));
   }
   for (i=0;i<=natm-1;i++){
-    fscanf(fp,"%lf %lf %lf %lf ",&a1,&a2,&a3,&b1);
+    ierr=fscanf(fp,"%lf %lf %lf %lf ",&a1,&a2,&a3,&b1);
     atmpos[0][i]=a1;
     atmpos[1][i]=a2;
     atmpos[2][i]=a3;
     atmrad[i]=b1;
-  } 
+  }
   fclose(fp);
   printf("finish reading position file\n");
 
@@ -180,7 +191,7 @@ int readin(char fname[16],char density[16]){
       }
       for (ii=0;ii<3;ii++){
         for (jj=0;jj<3;jj++){
-          face[jj][ii] = sptpos[jj][jface[ii]-1];  
+          face[jj][ii] = sptpos[jj][jface[ii]-1];
           yy[jj] += 1.0/3.0*(face[jj][ii]);
         }
       }
@@ -189,7 +200,7 @@ int readin(char fname[16],char density[16]){
       dist_local=sqrt(dist_local);
       if (dist_local<1.0e-6) {
         ialert=1;
-printf("particles %d and %d are too close: %e\n", i,j,dist_local);
+        printf("particles %d and %d are too close: %e\n", i,j,dist_local);
       }
     }
 
@@ -213,7 +224,6 @@ printf("particles %d and %d are too close: %e\n", i,j,dist_local);
   for(i=0; i<3; i++) free(nvert[i]);
   free(nvert);
 
-//  nvert = Make2DIntArray(3,nface,"face msms");
   nvert=(int**)calloc(3,sizeof(int*));
   for (i=0;i<3;i++){
     nvert[i]=(int*)calloc(nface,sizeof(int));
@@ -224,12 +234,19 @@ printf("particles %d and %d are too close: %e\n", i,j,dist_local);
   for(i=0;i<3;i++) free(nvert_copy[i]);
   free(nvert_copy);
 
- 
-
   printf("total area = %f\n",s_area);
+
   time_t cpu2 = time(NULL);
   cpuf = ((double)(cpu2-cpu1));
   printf("total MSMS post-processing time = %f\n",cpuf);
+
+  //sprintf(fname_tp,"rm %s%s.xyzr",fpath,fname);
+  //ierr=system(fname_tp);
+  sprintf(fname_tp,"rm %s%s.vert",fpath,fname);
+  ierr=system(fname_tp);
+  sprintf(fname_tp,"rm %s%s.face",fpath,fname);
+  ierr=system(fname_tp);
+
 
 }
 
