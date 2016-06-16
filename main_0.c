@@ -29,10 +29,16 @@ int main(int argc, char *argv[]) {
 
   /* functions */
   int readin(char fname[16],char density[16]);
-  extern int compute_direct();
-  int compute_direct2();
-  int compute_direct3();
-  int treecode3d_yukawa();
+  int compute_direct(double* x,double* y,double* z,double* q,
+                     double kappa,int numpars,double* dpoten);
+  int compute_direct2(double* x,double* y,double* z,double* q,
+                      double kappa,int numpars,double* dpoten);
+  int compute_direct3(double* x,double* y,double* z,double* q,
+                      double kappa,int numpars,double* dpoten);
+  int treecode3d_yukawa(double* x,double* y,double* z,double* q,
+                        double kappa,int order,double theta,
+                        int maxparnode,int numpars,
+                        int* orderind,double* tpoten);
 
   /* set constant */
   kappa=0.0;             // screening coefficient
@@ -128,7 +134,8 @@ int main(int argc, char *argv[]) {
   for (i=0;i<numpars;i++) tpoten[i]=0.0;
 
   sttime = time(NULL);
-  treecode3d_yukawa();
+  treecode3d_yukawa(x,y,z,q,kappa,order,theta,maxparnode,numpars,
+                    orderind,tpoten);
   ettime = time(NULL);
   tttime = ((double)ettime-sttime);
   printf("  \n");
@@ -139,7 +146,7 @@ int main(int argc, char *argv[]) {
   printf("Computing potential - directly\n");
 
   sdtime = time(NULL);
-  compute_direct();
+  compute_direct(x,y,z,q,kappa,numpars,dpoten);
   edtime = time(NULL);
   tdtime = ((double)edtime-sdtime);
   printf("  \n");
@@ -197,17 +204,18 @@ int main(int argc, char *argv[]) {
 
   free(q);
 
-  free(orderind);
+//  free(orderind);
 
-  free(tpoten);
+//  free(tpoten);
 
-  free(dpoten);
+//  free(dpoten);
 
   return 0;
 } // end main
 
 
-int compute_direct(){
+int compute_direct(double* x,double* y,double* z,double* q, \
+                    double kappa,int numpars,double* dpoten){
   int i,j,k;
   double tx,ty,tz,fx,fy,fz,teng,dist,t1;
   double dpeng,temp,peng,pi;
@@ -236,7 +244,8 @@ int compute_direct(){
 
 }
 
-int compute_direct2(){
+int compute_direct2(double* x,double* y,double* z,double* q,
+                     double kappa,int numpars,double* dpoten){
   int i,j,k;
   double tx,ty,tz,fx,fy,fz,teng,dist,t1;
   double dpeng,temp,peng,pi;
@@ -263,7 +272,8 @@ int compute_direct2(){
   }
 }
 
-int compute_direct3(){
+int compute_direct3(double* x,double* y,double* z,double* q,
+                     double kappa,int numpars,double* dpoten){
   int i,j,k;
   double tx,ty,tz,fx,fy,fz,teng,dist,t1;
   double dpeng,temp,peng,pi,tempx,tempq;

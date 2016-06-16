@@ -133,9 +133,7 @@ int setup(double xyzminmax[6]){
   return(0);
 }
 
-void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
-                 double* z,double*q,int maxparnode,double xyzmm[6],
-                 int level,int numpars){
+void create_tree(tnode* p,int ibeg,int iend,double xyzmm[6],int level){
 
   /* local variables */
   double x_mid,y_mid,z_mid,xl,yl,zl,lmax,t1,t2,t3;
@@ -145,11 +143,7 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
   double lxyzmm[6];
   tnode *childnode;
 
-  int partition_8(double *x,double *y,double *z,double *q,
-                   double xyzmms[6][8],
-                   double xl,double yl,double zl,double lmax,
-                   int numposchild, double x_mid,double y_mid,
-                   double z_mid,int ind[8][2],int numpars);
+  extern int partition_8();
 
   for (i=0;i<8;i++){
     ind[i][0]=0; ind[i][1]=0;
@@ -225,8 +219,7 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
     y_mid=p->y_mid;
     z_mid=p->z_mid;
 
-    numposchild = partition_8(x,y,z,q,xyzmms,xl,yl,zl,lmax,numposchild,
-                              x_mid,y_mid,z_mid,ind,numpars);
+    numposchild = partition_8(xyzmms,xl,yl,zl,lmax,numposchild,x_mid,y_mid,z_mid,ind);
 
 //printf("ind %d,%d\n",ind[1][0],ind[1][1]);
 //    if (ibeg>=13322 && iend <=15055)
@@ -245,9 +238,7 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
         for (j=0;j<6;j++) {
           lxyzmm[j]=xyzmms[j][i];
         }
-        create_tree(p->child[p->num_children-1],
-                    ind[i][0],ind[i][1],x,y,z,q,maxparnode,
-                    lxyzmm,loclev,numpars);
+        create_tree(p->child[p->num_children-1],ind[i][0],ind[i][1],lxyzmm,loclev);
       }
     }
   }
@@ -256,11 +247,9 @@ void create_tree(tnode* p,int ibeg,int iend,double* x,double* y,
   }
 }
 
-int partition_8(double *x,double *y,double *z,double *q,
-                 double xyzmms[6][8],
-                 double xl,double yl,double zl,double lmax,
-                 int numposchild, double x_mid,double y_mid,
-                 double z_mid,int ind[8][2],int numpars){
+int partition_8(double xyzmms[6][8],double xl,double yl,double zl,double lmax,
+                int numposchild, double x_mid,double y_mid,
+                double z_mid,int ind[8][2]){
 /* PARTITION_8 determines the particle indices of the eight sub boxes
  * containing the particles after the box defined by particles I_BEG
  * to I_END is divided by its midpoints in each coordinate direction.
@@ -282,8 +271,7 @@ int partition_8(double *x,double *y,double *z,double *q,
   critlen = lmax/sqrt(2.0);
 //if(ind[0][0]==0) printf("x[0]=%f\n",x[0]);
   if (xl >= critlen) {
-    temp_ind = partition(x,y,z,q,orderarr,ind[0][0],ind[0][1],x_mid,
-                         temp_ind,numpars);
+    temp_ind = partition(x,y,z,q,orderarr,ind[0][0],ind[0][1],x_mid,temp_ind);
 
     ind[1][0]=temp_ind+1;
     ind[1][1]=ind[0][1];
@@ -298,8 +286,7 @@ int partition_8(double *x,double *y,double *z,double *q,
 //if(ind[0][0]==0) printf("x[0]=%f\n",x[0]);
   if (yl >= critlen) {
     for (i=0;i<numposchild;i++){
-      temp_ind = partition(y,x,z,q,orderarr,ind[i][0],ind[i][1],y_mid,
-                           temp_ind,numpars);
+      temp_ind = partition(y,x,z,q,orderarr,ind[i][0],ind[i][1],y_mid,temp_ind);
       ind[numposchild+i][0]=temp_ind+1;
       ind[numposchild+i][1]=ind[i][1];
       ind[i][1]=temp_ind;
@@ -315,8 +302,7 @@ int partition_8(double *x,double *y,double *z,double *q,
   if (zl >= critlen) {
 //    printf("zl=%f\n",z_mid);
     for (i=0;i<numposchild;i++){
-      temp_ind = partition(z,x,y,q,orderarr,ind[i][0],ind[i][1],z_mid,
-                           temp_ind,numpars);
+      temp_ind = partition(z,x,y,q,orderarr,ind[i][0],ind[i][1],z_mid,temp_ind);
       ind[numposchild+i][0]=temp_ind+1;
       ind[numposchild+i][1]=ind[i][1];
       ind[i][1]=temp_ind;
@@ -336,7 +322,7 @@ int partition_8(double *x,double *y,double *z,double *q,
 }
 
 int partition(double *a,double *b,double *c,double *q,int *indarr,int ibeg,
-               int iend,double val,int midind,int numpars){
+               int iend,double val,int midind){
 
   double ta,tb,tc,tq;
   int lower,upper,tind;
@@ -397,8 +383,7 @@ int partition(double *a,double *b,double *c,double *q,int *indarr,int ibeg,
   return (midind);
 }
 
-void tree_compp(tnode *p,double *x,double *y,double *z,double *q,
-                double kappa,double theta,double *tpoten,int numpars){
+void tree_compp(tnode *p){
 
 /* TREE_COMPF is the driver routine which calls COMPF_TREE for each
    particle, setting the global variable TARPOS before the call.
@@ -410,9 +395,6 @@ void tree_compp(tnode *p,double *x,double *y,double *z,double *q,
 
   extern double compp_tree();
   extern void comp_ms_all();
-
-//  pi4=3.141592653589793238462643*4.0;
-  for (i=0;i<numpars;i++) tpoten[i]=0.0;
 
   comp_ms_all(p,1);
 /* by compare with fortran comp_ms_all works good */
@@ -428,8 +410,7 @@ void tree_compp(tnode *p,double *x,double *y,double *z,double *q,
     x[i]=x[i]+100.123456789;
     q[i]=0.0;
 
-    peng = compp_tree(p,peng,x,y,z,q,kappa,theta,numpars);
-
+    peng = compp_tree(p);
 
     x[i]=tempx;
     q[i]=tempq;
@@ -498,14 +479,13 @@ void comp_ms(tnode *p,double *x,double *y,double *z,double* q,int numpars){
   }
 }
 
-double compp_tree(tnode *p,double peng,double *x,double *y,double *z,
-                double *q,double kappa,double theta,int numpars){
+double compp_tree(tnode *p){
 
-  double tx,ty,tz,dist,dist2,penglocal,pi;
+  double tx,ty,tz,dist,dist2,penglocal,pi,peng;
   int i,j,k,err;
 
   extern double compp_direct();
-  extern void comp_tcoeff();
+  extern int comp_tcoeff();
 
 /* determine DISTSQ for MAC test */
   pi = 3.141592653589793238462643;
@@ -532,14 +512,13 @@ double compp_tree(tnode *p,double peng,double *x,double *y,double *z,
   }
   else {
     if (p->num_children == 0){
-      peng = compp_direct(penglocal,p->ibeg,p->iend,x,y,z,q,kappa,numpars);
+      peng = compp_direct(p->ibeg,p->iend);
     }
     else {
     //If MAC fails check to see if there are children. If not, perform direct
     //calculation.  If there are children, call routine recursively for each.
       for (i=0;i<p->num_children;i++){
-        penglocal = compp_tree(p->child[i],penglocal,x,y,z,q,kappa,
-                   theta,numpars);
+        penglocal = compp_tree(p->child[i]);
         peng += penglocal;
       }
     }
@@ -547,7 +526,7 @@ double compp_tree(tnode *p,double peng,double *x,double *y,double *z,
   return peng;
 }
 
-void comp_tcoeff(tnode *p, double kappa){
+int comp_tcoeff(tnode *p, double kappa){
 // COMP_TCOEFF computes the Taylor coefficients of the potential
 // using a recurrence formula.  The center of the expansion is the
 // midpoint of the node P.  TARPOS and TORDERLIM are globally defined.
@@ -699,12 +678,13 @@ void comp_tcoeff(tnode *p, double kappa){
       }
     }
   }
+
+  return 0;
 }
 
-double compp_direct(double peng,int ibeg,int iend,double *x,double *y,
-                  double *z,double *q,double kappa,int numpars){
+double compp_direct(int ibeg,int iend){
   int j;
-  double dist2,dist,tx,ty,tz,pi;
+  double dist2,dist,tx,ty,tz,pi,peng;
 
   pi = 3.141592653589793238462643;
   peng = 0.0;
@@ -786,15 +766,14 @@ int remove_node(tnode *p){
   return 0;
 }
 
-int treecode3d_yukawa(double *x,double *y,double *z,double *q,double kappa,
-                       int order,double theta,int maxparnode,int numpars,
-                       int *orderind,double *tpoten){
+int treecode3d_yukawa(){
   tnode *troot;
   int i,level,err;
   double xyzminmax[6];
   time_t create_stime,create_etime,tree_stime,tree_etime;
   double create_ttime,tree_ttime;
 //printf("numpar is %d\n",numpars);
+
   setup(xyzminmax);
 
   level = 0;
@@ -805,7 +784,7 @@ int treecode3d_yukawa(double *x,double *y,double *z,double *q,double kappa,
 /**************** add timer and create tree ****************/
   create_stime=time(NULL);
 
-  create_tree(troot,0,numpars-1,x,y,z,q,maxparnode,xyzminmax,level,numpars);
+  create_tree(troot,0,numpars-1,xyzminmax,level);
 
   create_etime=time(NULL);
   create_ttime=((double)(create_etime-create_stime));
@@ -815,14 +794,14 @@ int treecode3d_yukawa(double *x,double *y,double *z,double *q,double kappa,
 /**************** add timer and compute cf *****************/
   tree_stime=time(NULL);
 
-  tree_compp(troot,x,y,z,q,kappa,theta,tpoten,numpars);
+  tree_compp(troot);
 
   tree_etime=time(NULL);
   tree_ttime=((double)(tree_etime-tree_stime));
   printf("runtime for compute tree is   %f\n",tree_ttime);
 /***********************************************************/
 
-  for (i=0;i<numpars;i++) orderind[orderarr[i]]=i;
+  //for (i=0;i<numpars;i++) orderind[orderarr[i]]=i;
 
   cleanup(troot);
 
