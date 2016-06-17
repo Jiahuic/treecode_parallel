@@ -801,8 +801,6 @@ int treecode3d_yukawa(){
   printf("runtime for compute tree is   %f\n",tree_ttime);
 /***********************************************************/
 
-  //for (i=0;i<numpars;i++) orderind[orderarr[i]]=i;
-
   cleanup(troot);
 
   return 0;

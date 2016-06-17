@@ -26,7 +26,7 @@ double center[3], r0[3], v0[3]; // fortran center(3)
 double *x,*y,*z,*q;
 double *x_copy, *y_copy, *z_copy, *q_copy;
 double *tpoten, *dpoten;
-int *orderind, *n_clst;
+int *n_clst;
 
 // timing variables
 

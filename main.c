@@ -48,7 +48,6 @@ int main(int argc, char *argv[]) {
   y = (double*)calloc(numpars, sizeof(double));
   z = (double*)calloc(numpars, sizeof(double));
   q = (double*)calloc(numpars, sizeof(double));
-  orderind = (int*)calloc(numpars, sizeof(int));
   if (x==NULL){
     fprintf(stderr, "setup error in main.c: x empty data array");
     return 1;
@@ -63,10 +62,6 @@ int main(int argc, char *argv[]) {
   }
   if (q==NULL){
     fprintf(stderr, "setup error in main.c: q empty data array");
-    return 1;
-  }
-  if (orderind==NULL){
-    fprintf(stderr, "setup error in main.c: orderind empty data array");
     return 1;
   }
 
@@ -196,8 +191,6 @@ int main(int argc, char *argv[]) {
   free(z);
 
   free(q);
-
-  free(orderind);
 
   free(tpoten);
 
