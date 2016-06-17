@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   maxparnode=500;
 
   /* by readin to get the surface of molecule */
-  sprintf(fname,"1ajj");
+  sprintf(fname,"1a63");
   sprintf(density,"3");
   readin(fname,density);
   numpars=nface;         // number of partucakes = number of faces
