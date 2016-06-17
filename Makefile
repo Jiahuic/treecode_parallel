@@ -1,6 +1,6 @@
 CC = gcc
 FLAGS = -c -O2
-#
+#cc = icc
 OBJECTS = main.o readin.o treecode.o
 
 ctreecode.exe : $(OBJECTS)
