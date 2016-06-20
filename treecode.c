@@ -10,6 +10,8 @@
 #include <math.h>
 #include <stdint.h>
 
+#include "mpi.h"
+
 #include "treecode.h"
 double minval(double* x, int numpars){
   int i;
@@ -121,9 +123,6 @@ int setup(double xyzminmax[6]){
   xyzminmax[3]=maxval(y,numpars);
   xyzminmax[4]=minval(z,numpars);
   xyzminmax[5]=maxval(z,numpars);
-
-  printf("%f,%f,%f,%f,%f,%f\n",xyzminmax[0],xyzminmax[1],xyzminmax[2],
-         xyzminmax[3],xyzminmax[4],xyzminmax[5]);
 
   orderarr = (int*)calloc(numpars,sizeof(int));
 
@@ -383,42 +382,92 @@ int partition(double *a,double *b,double *c,double *q,int *indarr,int ibeg,
   return (midind);
 }
 
-void tree_compp(tnode *p){
+int tree_compp(tnode *p,MPI_Comm comm){
 
 /* TREE_COMPF is the driver routine which calls COMPF_TREE for each
    particle, setting the global variable TARPOS before the call.
    The current target particle's x coordinate and charge are changed
    so that it does not interact with itself. P is the root node of the tree.*/
 
-  int i,j;
+  int i,j,id,mod;
   double peng,tempx,tempq,pi4;
+
+  /* MPI variables */
+  int is,ie,myid,numprocs;
+  double *tpoten_sub;
+  double stime,etime,atime;
 
   extern double compp_tree();
   extern void comp_ms_all();
 
-  comp_ms_all(p,1);
-/* by compare with fortran comp_ms_all works good */
-  for (i=0;i<numpars;i++){
-//  for (i=0;i<100;i++){
-    peng=0.0;
-    tarpos[0]=x[i];
-    tarpos[1]=y[i];
-    tarpos[2]=z[i];
-
-    tempx=x[i];
-    tempq=q[i];
-    x[i]=x[i]+100.123456789;
-    q[i]=0.0;
-
-    peng = compp_tree(p);
-
-    x[i]=tempx;
-    q[i]=tempq;
-//    USE order of points imposed by tree creation!
-//    tpoten[orderarr[i]]=tempq*peng;
-    tpoten[i]=tempq*peng;
-//    printf("%f\n",tpoten[i]);
+  /* get MPI id */
+  if (MPI_Comm_rank(comm, &myid) != MPI_SUCCESS) {
+    fprintf(stderr,"MPI_Comm_rank failure\n");
+    return 1;
   }
+
+  /* get the total number of processes */
+  if (MPI_Comm_size(comm, &numprocs) != MPI_SUCCESS) {
+    fprintf(stderr,"MPI_Comm_size failure\n");
+    return 1;
+  }
+
+  /* decompose the iteration space */
+  ie = numpars/numprocs;
+  mod = numpars%numprocs;
+
+  /* setting the position of send & recieve buff */
+  tpoten_sub = (double*)calloc(numpars,sizeof(double));
+  if (tpoten_sub==NULL){
+    fprintf(stderr, "setup error in direct: dpoten empty data array");
+    return 1;
+  }
+
+
+  comp_ms_all(p,1);
+
+/* by compare with fortran comp_ms_all works good */
+  stime = MPI_Wtime();
+  for (i=0;i<ie+1;i++){
+
+    id = i*numprocs+myid;
+    if (id < numpars){
+      peng=0.0;
+      tarpos[0]=x[id];
+      tarpos[1]=y[id];
+      tarpos[2]=z[id];
+  
+      tempx=x[id];
+      tempq=q[id];
+      x[id]=x[id]+100.123456789;
+      q[id]=0.0;
+  
+      peng = compp_tree(p);
+  
+      x[id]=tempx;
+      q[id]=tempq;
+
+      tpoten[id]=tempq*peng;
+    }
+  }
+  etime = MPI_Wtime();
+
+  if (myid == 0){
+    printf("\n");
+    printf("Iteration runtime for %d is %f\n", myid, etime-stime);
+  }
+
+  MPI_Allreduce(tpoten_sub,tpoten,numpars,MPI_DOUBLE,MPI_SUM,comm);
+
+  etime = MPI_Wtime();
+  if (myid == 0){
+    printf("\n");
+    printf("MPI&iteration runtime for %d, is %f\n", myid, etime-stime);
+  }
+
+  free(tpoten_sub);
+
+  return 0;
 }
 
 void comp_ms_all(tnode *p,int ifirst){
@@ -766,13 +815,20 @@ int remove_node(tnode *p){
   return 0;
 }
 
-int treecode3d_yukawa(){
+int treecode3d_yukawa(MPI_Comm comm){
   tnode *troot;
   int i,level,err;
   double xyzminmax[6];
   time_t create_stime,create_etime,tree_stime,tree_etime;
   double create_ttime,tree_ttime;
 //printf("numpar is %d\n",numpars);
+
+  /* mpi set up */
+  int myid;
+  if (MPI_Comm_rank(comm,&myid) != MPI_SUCCESS) {
+    fprintf(stderr,"MPI_Comm_rank failure\n");
+    return 1;
+  }
 
   setup(xyzminmax);
 
@@ -788,17 +844,23 @@ int treecode3d_yukawa(){
 
   create_etime=time(NULL);
   create_ttime=((double)(create_etime-create_stime));
-  printf("runtime for create tree is    %f\n",create_ttime);
+  if (myid == 0){
+    printf("\n");
+    printf("runtime for create tree is    %f\n",create_ttime);
+  }
 /***********************************************************/
 
 /**************** add timer and compute cf *****************/
   tree_stime=time(NULL);
 
-  tree_compp(troot);
+  tree_compp(troot,comm);
 
   tree_etime=time(NULL);
   tree_ttime=((double)(tree_etime-tree_stime));
-  printf("runtime for compute tree is   %f\n",tree_ttime);
+  if (myid == 0){
+    printf("\n");
+    printf("runtime for compute tree is   %f\n",tree_ttime);
+  }
 /***********************************************************/
 
   cleanup(troot);
