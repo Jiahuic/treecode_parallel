@@ -419,7 +419,7 @@ int tree_compp(tnode *p,MPI_Comm comm){
   /* setting the position of send & recieve buff */
   tpoten_sub = (double*)calloc(numpars,sizeof(double));
   if (tpoten_sub==NULL){
-    fprintf(stderr, "setup error in direct: dpoten empty data array");
+    fprintf(stderr, "setup error in direct: tpoten empty data array");
     return 1;
   }
 
@@ -447,7 +447,7 @@ int tree_compp(tnode *p,MPI_Comm comm){
       x[id]=tempx;
       q[id]=tempq;
 
-      tpoten[id]=tempq*peng;
+      tpoten_sub[id]=tempq*peng;
     }
   }
   etime = MPI_Wtime();

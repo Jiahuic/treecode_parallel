@@ -325,6 +325,8 @@ int compute_direct(MPI_Comm comm){
   MPI_Allgatherv(dpoten_sub,ie-is,MPI_DOUBLE,dpoten,recvcounts,
                  recv_disp,MPI_DOUBLE,comm);
 
+  free(dpoten_sub);
+
   return 0;
 }
 
