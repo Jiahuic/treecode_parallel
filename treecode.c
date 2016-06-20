@@ -819,7 +819,7 @@ int treecode3d_yukawa(MPI_Comm comm){
   tnode *troot;
   int i,level,err;
   double xyzminmax[6];
-  time_t create_stime,create_etime,tree_stime,tree_etime;
+  double create_stime,create_etime,tree_stime,tree_etime;
   double create_ttime,tree_ttime;
 //printf("numpar is %d\n",numpars);
 
@@ -838,12 +838,12 @@ int treecode3d_yukawa(MPI_Comm comm){
   troot = (tnode*)malloc(1*sizeof(tnode));
 
 /**************** add timer and create tree ****************/
-  create_stime=time(NULL);
+  create_stime=MPI_Wtime();
 
   create_tree(troot,0,numpars-1,xyzminmax,level);
 
-  create_etime=time(NULL);
-  create_ttime=((double)(create_etime-create_stime));
+  create_etime=MPI_Wtime();
+  create_ttime=create_etime-create_stime;
   if (myid == 0){
     printf("\n");
     printf("runtime for create tree is    %f\n",create_ttime);
@@ -851,12 +851,12 @@ int treecode3d_yukawa(MPI_Comm comm){
 /***********************************************************/
 
 /**************** add timer and compute cf *****************/
-  tree_stime=time(NULL);
+  tree_stime=MPI_Wtime();
 
   tree_compp(troot,comm);
 
-  tree_etime=time(NULL);
-  tree_ttime=((double)(tree_etime-tree_stime));
+  tree_etime=MPI_Wtime();
+  tree_ttime=tree_etime-tree_stime;
   if (myid == 0){
     printf("\n");
     printf("runtime for compute tree is   %f\n",tree_ttime);

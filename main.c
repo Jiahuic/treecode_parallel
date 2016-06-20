@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
   double ***f_inferr, ***f_relinferr,t;
   double tnorm;
   int maxint;
-  time_t sttime,ettime,sdtime,edtime;
+  double sttime,ettime,sdtime,edtime;
   double tttime,tdtime;
 
   char fname[16],density[16];
@@ -161,10 +161,10 @@ int main(int argc, char *argv[]) {
   /* compute potential by treecode */
   for (i=0;i<numpars;i++) tpoten[i]=0.0;
 
-  sttime = time(NULL);
+  sttime = MPI_Wtime();
   treecode3d_yukawa(MPI_COMM_WORLD);
-  ettime = time(NULL);
-  tttime = ((double)ettime-sttime);
+  ettime = MPI_Wtime();
+  tttime = ettime-sttime;
 
   if (myid == 0){
     printf("  \n");
@@ -175,10 +175,10 @@ int main(int argc, char *argv[]) {
     printf("Computing potential - directly\n");
   }
 
-  sdtime = time(NULL);
+  sdtime = MPI_Wtime();
   compute_direct(MPI_COMM_WORLD);
-  edtime = time(NULL);
-  tdtime = ((double)edtime-sdtime);
+  edtime = MPI_Wtime();
+  tdtime = edtime-sdtime;
 
   if (myid == 0){
     printf("  \n");
@@ -300,8 +300,6 @@ int compute_direct(MPI_Comm comm){
 
   pi = 3.141592653589793238462643;/* 24 digits of point */
 
-  for (i=0;i<ie-is;i++) dpoten_sub[i]=0.0;
-
   for (i=0;i<ie-is;i++){
     peng = 0.0;
     tempx=x[is+i];
@@ -311,8 +309,8 @@ int compute_direct(MPI_Comm comm){
 
     for (j=0;j<numpars;j++){
       tx = x[j]-tempx;
-      ty = y[j]-y[i];
-      tz = z[j]-z[i];
+      ty = y[j]-y[is+i];
+      tz = z[j]-z[is+i];
       dist = sqrt(tx*tx+ty*ty+tz*tz);
       temp = exp(-kappa*dist)/dist/4/pi;
       peng += q[j]*temp;
@@ -326,6 +324,8 @@ int compute_direct(MPI_Comm comm){
                  recv_disp,MPI_DOUBLE,comm);
 
   free(dpoten_sub);
+  free(recvcounts);
+  free(recv_disp);
 
   return 0;
 }
