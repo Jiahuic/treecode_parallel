@@ -1,4 +1,4 @@
-This program is built on mvapich2/2.0-gcc-4.9.1, whose treecode part and direct sum part both are parallelized. Users can use different numbers of processors totest the preformance of parallelization.
+This program is built on mvapich2/2.0-gcc-4.9.1, whose treecode part and direct sum part both are parallel. Users can use different numbers of processors totest the preformance of parallelization.
 
 To run the program:
 

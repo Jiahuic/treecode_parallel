@@ -71,6 +71,7 @@ int main(int argc, char *argv[]) {
   }
 
   MPI_Bcast(&nface,1,MPI_INT,0,MPI_COMM_WORLD);
+
   numpars=nface;         // number of partucakes = number of faces
 
   x = (double*)calloc(numpars, sizeof(double));
@@ -130,6 +131,26 @@ int main(int argc, char *argv[]) {
   MPI_Bcast(y,numpars,MPI_DOUBLE,0,MPI_COMM_WORLD);
   MPI_Bcast(z,numpars,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+  if (myid == 0){
+    for (i=0;i<3;i++){
+      free(extr_v[i]);
+      free(sptpos[i]);
+      free(sptnrm[i]);
+      free(atmpos[i]);
+      free(nvert[i]);
+    }
+    for (i=0;i<2;i++){
+      free(extr_f[i]);
+    }
+    free(extr_v);
+    free(sptpos);
+    free(sptnrm);
+    free(extr_f);
+    free(atmpos);
+    free(atmrad);
+    free(nvert);
+  }
+
   /* two tepy charge */
   for (i=0;i<numpars;i++)
     q[i]=1.0;
@@ -156,7 +177,6 @@ int main(int argc, char *argv[]) {
     printf("                   order      = %d\n ",order);
     printf("                   maxparnode = %d\n",maxparnode);
   }
-
 
   /* compute potential by treecode */
   for (i=0;i<numpars;i++) tpoten[i]=0.0;
@@ -214,36 +234,11 @@ int main(int argc, char *argv[]) {
     printf("  \n");
   }
 
-  if (myid == 0){
-    for (i=0;i<3;i++){
-      free(extr_v[i]);
-      free(sptpos[i]);
-      free(sptnrm[i]);
-      free(atmpos[i]);
-      free(nvert[i]);
-    }
-    for (i=0;i<2;i++){
-      free(extr_f[i]);
-    }
-    free(extr_v);
-    free(sptpos);
-    free(sptnrm);
-    free(extr_f);
-    free(atmpos);
-    free(atmrad);
-    free(nvert);
-  }
-
   free(x);
-
   free(y);
-
   free(z);
-
   free(q);
-
   free(tpoten);
-
   free(dpoten);
 
   MPI_Finalize();

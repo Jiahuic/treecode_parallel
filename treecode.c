@@ -196,8 +196,8 @@ void create_tree(tnode* p,int ibeg,int iend,double xyzmm[6],int level){
 
   if (maxlevel < level) maxlevel=level;
   p->num_children = 0;
-  p->child=(tnode**)malloc(8*sizeof(tnode*));
-  for (i=0;i<8;i++) p->child[i]=(tnode*)malloc(1*sizeof(tnode));
+  p->child=(tnode**)calloc(8,sizeof(tnode*));
+  for (i=0;i<8;i++) p->child[i]=(tnode*)calloc(1,sizeof(tnode));
   p->child[0]->x_min = 1.0;
 
   if (p->numpar > maxparnode){
@@ -835,7 +835,7 @@ int treecode3d_yukawa(MPI_Comm comm){
   level = 0;
   minlevel = 50000;
   maxlevel = 0;
-  troot = (tnode*)malloc(1*sizeof(tnode));
+  troot = (tnode*)calloc(1,sizeof(tnode));
 
 /**************** add timer and create tree ****************/
   create_stime=MPI_Wtime();
