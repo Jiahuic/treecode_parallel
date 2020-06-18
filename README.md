@@ -12,5 +12,5 @@ Example <code> mpiexec -n 4 ./ctreecode.exe</code></p>
 
 * <p>On the SLURM queueing system, submit.job is a batch submission script for that.</p>
 
-
-
+## Declaration
+This material is based upon work supported by the National Science Foundation under NSF Grant DMS-0915057, DMS-1418966, DMS-1418957, DMS-1819094, DMS-1819193. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the National Science Foundation.
